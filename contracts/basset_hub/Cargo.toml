@@ -1,0 +1,31 @@
+[package]
+name = "basset_hub"
+version = "0.1.0"
+authors = ["Blockwave <dev@propwave.io>"]
+edition = "2022"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+near-sdk = "3.1.0"
+schemars = "0.8.8"
+serde = { version = "1.0.133", default-features = false, features = ["derive"] }
+snafu = { version = "0.7.0" }
+rand = "0.8.4"
+basset_token = {path = "../basset_token"}
+airdrop_registry = {path = "../airdrop_registry", default-features = false, version = "0.1.0"}
+w-near = { path = "../../packages/w-near", version = "1.0.0"}
+
+[profile.release]
+codegen-units = 1
+# Tell `rustc` to optimize for small code size.
+opt-level = "z"
+lto = true
+debug = false
+panic = "abort"
+# Opt into extra safety checks on arithmetic operations https://stackoverflow.com/a/64136471/249801
+overflow-checks = true
+
+[workspace]
+members = []
