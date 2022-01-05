@@ -1,17 +1,14 @@
 [package]
-name = "basset_hub"
+name = "greeter"
 version = "0.1.0"
-authors = ["Blockwave <dev@propwave.io>"]
-edition = "2021"
+authors = ["Near Inc <hello@near.org>"]
+edition = "2018"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 near-sdk = "3.1.0"
-snafu = { version = "0.7.0" }
-rand = "0.8.4"
-bnear_token = {path = "../bnear_token"}
 
 [profile.release]
 codegen-units = 1

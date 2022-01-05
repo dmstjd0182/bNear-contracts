@@ -1,57 +1,77 @@
-/*
- * This is an example of a Rust smart contract with two simple, symmetric functions:
- *
- * 1. set_greeting: accepts a greeting, such as "howdy", and records it for the user (account_id)
- *    who sent the request
- * 2. get_greeting: accepts an account_id and returns the greeting saved for it, defaulting to
- *    "Hello"
- *
- * Learn more about writing NEAR smart contracts with Rust:
- * https://github.com/near/near-sdk-rs
- *
- */
-
-// To conserve gas, efficient serialization is achieved through Borsh (http://borsh.io/)
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::{env, near_bindgen, setup_alloc};
-use near_sdk::collections::LookupMap;
+use near_sdk::{env, near_bindgen, setup_alloc, PanicOnDefault};
+
+use crate::config::Config;
+use crate::state::{State, CurrentBatch};
+use crate::params::Parameters;
+
+mod config;
+mod state;
+mod params;
 
 setup_alloc!();
 
-// Structs in Rust are similar to other languages, and may include impl keyword as shown below
-// Note: the names of the structs are not important when calling the smart contract, but the function names are
+
 #[near_bindgen]
-#[derive(BorshDeserialize, BorshSerialize)]
+#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 pub struct Contract {
-    records: LookupMap<String, String>,
-}
-
-impl Default for Contract {
-  fn default() -> Self {
-    Self {
-      records: LookupMap::new(b"a".to_vec()),
-    }
-  }
+    config: Config,
+    parameters: Parameters,
+    current_batch: CurrentBatch,
+    state: State,
 }
 
 #[near_bindgen]
-impl Welcome {
-    pub fn set_greeting(&mut self, message: String) {
-        let account_id = env::signer_account_id();
+impl Contract {
+    #[init]
+    pub fn new(
+        epoch_period: u64,
+        underlying_coin_denom: String,
+        unbonding_period: u64,
+        peg_recovery_fee: f64,
+        er_threshold: f64,
+        reward_denom: String
+    ) -> Self {
+        let payment = env::attached_deposit();
 
-        // Use env::log to record logs permanently to the blockchain!
-        env::log(format!("Saving greeting '{}' for account '{}'", message, account_id,).as_bytes());
+        // store config
+        let config = Config {
+            creator: env::signer_account_id(),
+            reward_contract: None,
+            token_contract: None,
+            airdrop_registry_contract: None,
+        };
 
-        self.records.insert(&account_id, &message);
-    }
+        // instantiate parameters
+        let parameters = Parameters {
+        epoch_period,
+        underlying_coin_denom,
+        unbonding_period,
+        peg_recovery_fee,
+        er_threshold,
+        reward_denom,
+        };
 
-    // `match` is similar to `switch` in other languages; here we use it to default to "Hello" if
-    // self.records.get(&account_id) is not yet defined.
-    // Learn more: https://doc.rust-lang.org/book/ch06-02-match.html#matching-with-optiont
-    pub fn get_greeting(&self, account_id: String) -> String {
-        match self.records.get(&account_id) {
-            Some(greeting) => greeting,
-            None => "Hello".to_string(),
+        let current_batch = CurrentBatch {
+            id: 1,
+            requested_with_fee: Default::default(),
+        };
+
+        // store state
+        let state = State {
+        exchange_rate: 1.0,
+        last_index_modification: env::block_timestamp(),
+        last_unbonded_time: env::block_timestamp(),
+        last_processed_batch: 0u64,
+        total_bond_amount: payment,
+        ..Default::default()
+        };
+
+        Self{
+            config,
+            parameters,
+            current_batch,
+            state,
         }
     }
 }

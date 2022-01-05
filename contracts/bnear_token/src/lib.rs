@@ -24,18 +24,21 @@ mod b_near;
 
 near_sdk::setup_alloc!();
 
+
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 pub struct Contract {
     pub ft: FungibleToken,
+    pub hub_contract: AccountId,
 }
 
 #[near_bindgen]
 impl Contract {
     #[init]
-    pub fn new() -> Self {
+    pub fn new(_hub_contract: ValidAccountId) -> Self {
         Self {
             ft: FungibleToken::new(b"f".to_vec()),
+            hub_contract: _hub_contract.into(),
         }
     }
 }
