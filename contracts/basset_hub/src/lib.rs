@@ -9,8 +9,9 @@ use crate::state::{State, CurrentBatch};
 use crate::params::Parameters;
 
 mod config;
-mod state;
 mod params;
+mod state;
+mod token_receiver;
 // mod unbond;
 
 setup_alloc!();
@@ -36,6 +37,8 @@ impl Contract {
         er_threshold: d128,
         reward_denom: String
     ) -> Self {
+        assert!(!env::state_exists(), "The contract is already initialized");
+        
         let payment: Balance = match env::attached_deposit() {
             value if value > 0 => value,
             _ => env::panic(b"No assets are provided to bond"),
@@ -81,34 +84,4 @@ impl Contract {
             state,
         }
     }
-
-    // pub fn ft_on_transfer(
-    //     &mut self,
-    //     sender_id: AccountId,
-    //     amount: U128,
-    //     msg: String,
-    // ) -> PromiseOrValue<U128> {
-    //     //only token contract can execute
-    //     assert!(self.config.token_contract == env::predecessor_account_id());
-
-    //     self.execute_unbond(amount, sender_id);
-    // }
-
-    // pub fn query_total_issued(&self) -> U128 {
-    //     ext_fungible_token::ft_total_supply(
-    //         self.config.token_contract.unwrap(),
-    //         0,
-    //         5_000_000_000_000,
-    //     )
-    // }
-
-    pub fn set_number(&self, a: d128, b: d128) -> d128 {
-        a * b
-    }
-}
-
-#[test]
-fn d128_test() {
-    let instance: Contract = Contract{number_1: d128!(0.0), number_2: d128!(0.0)};
-    assert_eq!(format!("{}", instance.set_number(d128!(0.7), d128!(0.184))), "0.1288");
 }
