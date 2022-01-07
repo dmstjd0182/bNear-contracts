@@ -11,7 +11,7 @@ use crate::params::Parameters;
 mod config;
 mod params;
 mod state;
-mod token_receiver;
+// mod token_receiver;
 // mod unbond;
 
 setup_alloc!();
@@ -38,7 +38,7 @@ impl Contract {
         reward_denom: String
     ) -> Self {
         assert!(!env::state_exists(), "The contract is already initialized");
-        
+
         let payment: Balance = match env::attached_deposit() {
             value if value > 0 => value,
             _ => env::panic(b"No assets are provided to bond"),
@@ -64,7 +64,7 @@ impl Contract {
 
         let current_batch = CurrentBatch {
             id: 1,
-            requested_with_fee: Default::default(),
+            requested_with_fee: U128(0),
         };
 
         // store state
@@ -73,8 +73,9 @@ impl Contract {
             last_index_modification: env::block_timestamp(),
             last_unbonded_time: env::block_timestamp(),
             last_processed_batch: 0u64,
-            total_bond_amount: payment,
-            ..Default::default()
+            total_bond_amount: payment.into(),
+            prev_hub_balance: U128(0),
+            actual_unbonded_amount: U128(0)
         };
 
         Self{
