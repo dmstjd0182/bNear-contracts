@@ -13,7 +13,7 @@ impl Contract {
     pub fn near_deposit(&mut self) {
         let mut amount = env::attached_deposit();
         assert!(amount > 0, "Requires positive attached deposit");
-        let account_id = env::predecessor_account_id();
+        let account_id = env::signer_account_id();
         if !self.ft.accounts.contains_key(&account_id) {
             // Not registered, register if enough $NEAR has been attached.
             // Subtract registration amount from the account balance.
@@ -37,7 +37,7 @@ impl Contract {
     #[payable]
     pub fn near_withdraw(&mut self, amount: U128) -> Promise {
         assert_one_yocto();
-        let account_id = env::predecessor_account_id();
+        let account_id = env::signer_account_id();
         let amount = amount.into();
         self.ft.internal_withdraw(&account_id, amount);
         log!("Withdraw {} NEAR from {}", amount, account_id);
