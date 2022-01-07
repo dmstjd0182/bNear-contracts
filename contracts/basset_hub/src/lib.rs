@@ -85,4 +85,26 @@ impl Contract {
             state,
         }
     }
+
+    // Check slashing, update state, and calculate the new exchange rate.
+    fn slashing(&mut self) {
+        let coin_denom = self.parameters.underlying_coin_denom;
+
+        // Check the amount that contract thinks is bonded
+        let state_total_bonded: U128 = self.state.total_bond_amount;
+
+        // Check the actual bonded amount
+        let delegations: Balance = env::validator_stake(env::current_account_id().as_ref());
+        let mut actual_total_bonded = U128(delegations);
+
+        // Need total issued for updating the exchange rate
+        let total_issued: U128 = self.get_total_supply();
+        let current_requested_fee = self.current_batch.requested_with_fee;
+        
+        // Slashing happened if the actual amount is less than stored amount
+        if state_total_bonded.0 > actual_total_bonded.0 {
+            self.state.total_bond_amount = actual_total_bonded;
+            state.update_exchange_rate(total_issued, current_requested_fee);
+        }
+    }
 }
