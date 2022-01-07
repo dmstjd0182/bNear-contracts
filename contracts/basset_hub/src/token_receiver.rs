@@ -12,12 +12,12 @@ impl FungibleTokenReceiver for Contract{
         &mut self,
         sender_id: ValidAccountId,
         amount: U128,
-        msg: String,
+        _msg: String,
     ) -> PromiseOrValue<U128> {
         assert!(self.config.token_contract == Some(env::predecessor_account_id()),
             "the token contract must have been registered");
 
-        // execute_unbond(amount, sender_id.into());
+        self.execute_unbond(amount, sender_id.into());
         // we don't return funds back to sender.
         PromiseOrValue::Value(U128(0))
     }

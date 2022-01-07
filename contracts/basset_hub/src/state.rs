@@ -4,13 +4,13 @@ use near_sdk::json_types::{U128};
 use near_decimal::d128;
 
 
-#[derive(BorshDeserialize, BorshSerialize)]
+#[derive(BorshDeserialize, BorshSerialize, Clone, Copy)]
 pub struct CurrentBatch {
     pub id: u64,
     pub requested_with_fee: U128,
 }
 
-#[derive(BorshDeserialize, BorshSerialize)]
+#[derive(BorshDeserialize, BorshSerialize, Clone, Copy)]
 pub struct State {
     pub exchange_rate: d128,
     pub total_bond_amount: U128,
