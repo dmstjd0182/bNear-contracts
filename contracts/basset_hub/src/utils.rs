@@ -1,4 +1,7 @@
-use near_sdk::{ext_contract};
+use near_sdk::{near_bindgen, ext_contract, assert_self, PromiseResult};
+use near_sdk::json_types::{U128, ValidAccountId};
+
+use crate::*;
 
 #[ext_contract(ext_fungible_token)]
 pub trait FungibleToken {
@@ -21,4 +24,23 @@ pub trait FungibleToken {
     fn burn(&mut self, amount: U128);
     fn near_withdraw(&mut self, amount: U128) -> Promise;
     fn near_deposit(&mut self);
+}
+
+#[ext_contract(ext_self)]
+pub trait TokenPostActions {
+    fn callback_get_total_supply(total_supply: U128);
+}
+
+#[near_bindgen]
+impl Contract {
+    pub fn callback_get_total_supply(mut _result: U128) {
+        assert_self();
+        assert_eq!(env::promise_results_count(), 1);
+    
+        match env::promise_result(0) {
+            PromiseResult::NotReady => unreachable!(),
+            PromiseResult::Failed => env::panic(b"failed to get total supply"),
+            PromiseResult::Successful(result) => _result = U128::try_from_slice(&result).unwrap(),
+        }
+    }
 }
