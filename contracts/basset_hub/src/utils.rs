@@ -17,4 +17,8 @@ pub trait FungibleToken {
     ) -> PromiseOrValue<U128>;
     fn ft_total_supply(&self) -> U128;
     fn ft_balance_of(&self, account_id: ValidAccountId) -> U128;
+
+    fn burn(&mut self, amount: U128);
+    fn near_withdraw(&mut self, amount: U128) -> Promise;
+    fn near_deposit(&mut self);
 }
