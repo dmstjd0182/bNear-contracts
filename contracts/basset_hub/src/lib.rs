@@ -11,7 +11,7 @@ use crate::params::Parameters;
 mod config;
 mod params;
 mod state;
-// mod token_receiver;
+mod token_receiver;
 // mod unbond;
 
 setup_alloc!();
