@@ -27,8 +27,8 @@ const VOTE_GAS: Gas = 100_000_000_000_000;
 /// The amount of gas given to complete internal `on_stake_action` call.
 const ON_STAKE_ACTION_GAS: Gas = 20_000_000_000_000;
 
-/// The amount of gas given to complete 'mint' call.
-const MINT_GAS: Gas = 20_000_000_000_000;
+/// The amount of gas given to complete 'mint' and 'burn' call.
+const MINT_AND_BURN_GAS: Gas = 20_000_000_000_000;
 
 /// The amount of yocto NEAR the contract dedicates to guarantee that the "share" price never
 /// decreases. It's used during rounding errors for share -> amount conversions.
@@ -306,6 +306,19 @@ impl StakingContract {
         self.internal_ping();
 
         let amount: Balance = amount.into();
+        self.inner_unstake(amount);
+
+        self.internal_restake();
+    }
+
+    /// Unstakes all stake reward from the inner account of the predecessor.
+    /// The new total unstaked balance will be available for withdrawal in four epochs.
+    pub fn unstake_reward(&mut self) {
+        // Unstake action always restakes
+        self.internal_ping();
+
+        let account_id = env::predecessor_account_id();
+        let amount: Balance = self.internal_get_stake_reward(&account_id);
         self.inner_unstake(amount);
 
         self.internal_restake();

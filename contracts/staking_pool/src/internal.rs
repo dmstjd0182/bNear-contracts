@@ -112,7 +112,7 @@ impl StakingContract {
             U128(charge_amount),
             &self.token_contract,
             NO_DEPOSIT,
-            MINT_GAS,
+            MINT_AND_BURN_GAS,
         );
 
         env::log(
@@ -131,7 +131,7 @@ impl StakingContract {
         );
     }
 
-    pub(crate) fn inner_unstake(&mut self, amount: u128) {
+    pub(crate) fn inner_unstake(&mut self, amount: Balance) {
         assert!(amount > 0, "Unstaking amount should be positive");
 
         let account_id = env::predecessor_account_id();
@@ -161,9 +161,20 @@ impl StakingContract {
             "Invariant violation. Calculated staked amount must be positive, because \"stake\" share price should be at least 1"
         );
 
+        // The amount to burn bNEAR.
+        let burn_amount: Balance = (U256::from(account.stake_principal) * U256::from(receive_amount) 
+            / U256::from(self.staked_amount_from_num_shares_rounded_down(account.stake_shares)))
+            .as_u128();
+
         account.stake_shares -= num_shares;
         account.unstaked += receive_amount;
         account.unstaked_available_epoch_height = env::epoch_height() + NUM_EPOCHS_TO_UNLOCK;
+        // Reduce stake reward first, then reduce stake principal.
+        let stake_reward: Balance = self.internal_get_stake_reward(&account_id);
+        if stake_reward < receive_amount {
+            let principal_reduce: Balance = receive_amount - stake_reward;
+            account.stake_principal -= principal_reduce;
+        }
         self.internal_save_account(&account_id, &account);
 
         // The amount tokens that will be unstaked from the total to guarantee the "stake" share
@@ -173,6 +184,15 @@ impl StakingContract {
 
         self.total_staked_balance -= unstake_amount;
         self.total_stake_shares -= num_shares;
+
+        
+        ext_fungible_token::burn(
+            account_id.clone(),
+            U128(burn_amount),
+            &self.token_contract,
+            NO_DEPOSIT,
+            MINT_AND_BURN_GAS,
+        );
 
         env::log(
             format!(
@@ -333,6 +353,13 @@ impl StakingContract {
     /// Inner method to get the given account or a new default value account.
     pub(crate) fn internal_get_account(&self, account_id: &AccountId) -> Account {
         self.accounts.get(account_id).unwrap_or_default()
+    }
+
+    pub(crate) fn internal_get_stake_reward(&self, account_id: &AccountId) -> Balance {
+        let account = self.internal_get_account(account_id);
+        let staked_balance: Balance = self.staked_amount_from_num_shares_rounded_down(account.stake_shares);
+
+        staked_balance - account.stake_principal
     }
 
     /// Inner method to save the given account for a given account ID.

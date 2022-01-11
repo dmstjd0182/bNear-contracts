@@ -23,6 +23,7 @@ impl StakingContract {
         (account.unstaked_balance.0 + account.staked_balance.0).into()
     }
 
+    /// Returns the staking reward of the given account.
     pub fn get_account_stake_reward(&self, account_id: AccountId) -> U128 {
         self.get_account(account_id).stake_reward
     }
@@ -61,12 +62,13 @@ impl StakingContract {
     pub fn get_account(&self, account_id: AccountId) -> HumanReadableAccount {
         let account = self.internal_get_account(&account_id);
         let staked_balance: Balance = self.staked_amount_from_num_shares_rounded_down(account.stake_shares);
+        let stake_reward: Balance = self.internal_get_stake_reward(&account_id);
         HumanReadableAccount {
             account_id,
             unstaked_balance: account.unstaked.into(),
             staked_balance: staked_balance.into(),
             can_withdraw: account.unstaked_available_epoch_height <= env::epoch_height(),
-            stake_reward: U128(staked_balance - account.stake_principal),
+            stake_reward: stake_reward.into(),
         }
     }
 
