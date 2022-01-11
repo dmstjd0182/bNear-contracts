@@ -14,12 +14,8 @@ use near_contract_standards::fungible_token::metadata::{
 use near_contract_standards::fungible_token::FungibleToken;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::json_types::{ValidAccountId, U128};
-// Needed by `impl_fungible_token_core` for old Rust.
-#[allow(unused_imports)]
-use near_sdk::env;
-use near_sdk::{near_bindgen, AccountId, PanicOnDefault, PromiseOrValue};
+use near_sdk::{env, near_bindgen, log, Promise, Balance, AccountId, PanicOnDefault, PromiseOrValue};
 
-mod legacy_storage;
 mod b_near;
 
 near_sdk::setup_alloc!();
@@ -29,17 +25,25 @@ near_sdk::setup_alloc!();
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 pub struct Contract {
     pub ft: FungibleToken,
-    pub hub_contract: AccountId,
+    pub staking_pool: AccountId,
 }
 
 #[near_bindgen]
 impl Contract {
     #[init]
-    pub fn new(_hub_contract: ValidAccountId) -> Self {
+    pub fn new(staking_pool: ValidAccountId) -> Self {
         Self {
             ft: FungibleToken::new(b"f".to_vec()),
-            hub_contract: _hub_contract.into(),
+            staking_pool: staking_pool.into(),
         }
+    }
+
+    pub(crate) fn assert_staking_pool(&self) {
+        assert_eq!(
+            env::predecessor_account_id(),
+            self.staking_pool,
+            "Can only be called by the staking pool."
+        );
     }
 }
 

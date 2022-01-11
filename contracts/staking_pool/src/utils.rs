@@ -8,6 +8,12 @@ pub trait VoteContract {
     fn vote(&mut self, is_vote: bool);
 }
 
+/// Interface for bNear contract.
+#[ext_contract(ext_fungible_token)]
+pub trait FungibleToken {
+    fn mint(&mut self, account_id: AccountId, amount: U128);
+}
+
 /// Interface for the contract itself.
 #[ext_contract(ext_self)]
 pub trait SelfContract {

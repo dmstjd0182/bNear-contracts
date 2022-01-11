@@ -2,11 +2,11 @@ use std::convert::TryInto;
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::UnorderedMap;
-use near_sdk::json_types::{Base58PublicKey, U128};
+use near_sdk::json_types::{Base58PublicKey, U128, ValidAccountId};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{
     env, near_bindgen, AccountId, Balance, EpochHeight, Promise, PublicKey,
-    ext_contract, PromiseResult,
+    ext_contract, PromiseResult, Gas
 };
 use uint::construct_uint;
 
@@ -19,13 +19,16 @@ mod test_utils;
 #[cfg(test)]
 mod tests;
 
-use crate::utils::{ext_voting, ext_self};
+use crate::utils::{ext_voting, ext_fungible_token, ext_self};
 
 /// The amount of gas given to complete `vote` call.
-const VOTE_GAS: u64 = 100_000_000_000_000;
+const VOTE_GAS: Gas = 100_000_000_000_000;
 
 /// The amount of gas given to complete internal `on_stake_action` call.
-const ON_STAKE_ACTION_GAS: u64 = 20_000_000_000_000;
+const ON_STAKE_ACTION_GAS: Gas = 20_000_000_000_000;
+
+/// The amount of gas given to complete 'mint' call.
+const MINT_GAS: Gas = 20_000_000_000_000;
 
 /// The amount of yocto NEAR the contract dedicates to guarantee that the "share" price never
 /// decreases. It's used during rounding errors for share -> amount conversions.
@@ -59,6 +62,9 @@ pub struct Account {
     /// The minimum epoch height when the withdrawn is allowed.
     /// This changes after unstaking action, because the amount is still locked for 3 epochs.
     pub unstaked_available_epoch_height: EpochHeight,
+    /// The principal amount of staking.
+    /// Calculate cumulative staking reward using this.
+    pub stake_principal: Balance,
 }
 
 /// Represents an account structure readable by humans.
@@ -72,6 +78,7 @@ pub struct HumanReadableAccount {
     pub staked_balance: U128,
     /// Whether the unstaked balance is available for withdrawal now.
     pub can_withdraw: bool,
+    pub stake_reward: U128,
 }
 
 impl Default for Account {
@@ -80,6 +87,7 @@ impl Default for Account {
             unstaked: 0,
             stake_shares: 0,
             unstaked_available_epoch_height: 0,
+            stake_principal: 0,
         }
     }
 }
@@ -120,6 +128,7 @@ pub struct StakingContract {
     /// Pausing is useful for node maintenance. Only the owner can pause and resume staking.
     /// The contract is not paused by default.
     pub paused: bool,
+    pub token_contract: AccountId,
 }
 
 impl Default for StakingContract {
@@ -162,6 +171,7 @@ impl StakingContract {
         owner_id: AccountId,
         stake_public_key: Base58PublicKey,
         reward_fee_fraction: RewardFeeFraction,
+        token_contract: ValidAccountId,
     ) -> Self {
         assert!(!env::state_exists(), "Already initialized");
         reward_fee_fraction.assert_valid();
@@ -186,6 +196,7 @@ impl StakingContract {
             reward_fee_fraction,
             accounts: UnorderedMap::new(b"u".to_vec()),
             paused: false,
+            token_contract: token_contract.into(),
         };
         // Staking with the current pool to make sure the staking key is valid.
         this.internal_restake();

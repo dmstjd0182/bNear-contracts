@@ -95,6 +95,7 @@ impl StakingContract {
         );
         account.unstaked -= charge_amount;
         account.stake_shares += num_shares;
+        account.stake_principal += charge_amount;
         self.internal_save_account(&account_id, &account);
 
         // The staked amount that will be added to the total to guarantee the "stake" share price
@@ -104,6 +105,15 @@ impl StakingContract {
 
         self.total_staked_balance += stake_amount;
         self.total_stake_shares += num_shares;
+
+        // Mint bNear to caller.
+        ext_fungible_token::mint(
+            account_id.clone(),
+            U128(charge_amount),
+            &self.token_contract,
+            NO_DEPOSIT,
+            MINT_GAS,
+        );
 
         env::log(
             format!(

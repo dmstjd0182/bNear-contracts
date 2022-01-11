@@ -2,7 +2,7 @@
 name = "bnear_token"
 version = "1.0.0"
 authors = ["Blockwave <dev@propwave.io>", "Near Inc <hello@nearprotocol.com>", "Vincent <vincent@decentralisedengineeringltd.co.uk>"]
-edition = "2018"
+edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "rlib"]

@@ -23,6 +23,10 @@ impl StakingContract {
         (account.unstaked_balance.0 + account.staked_balance.0).into()
     }
 
+    pub fn get_account_stake_reward(&self, account_id: AccountId) -> U128 {
+        self.get_account(account_id).stake_reward
+    }
+
     /// Returns `true` if the given account can withdraw tokens in the current epoch.
     pub fn is_account_unstaked_balance_available(&self, account_id: AccountId) -> bool {
         self.get_account(account_id).can_withdraw
@@ -56,13 +60,13 @@ impl StakingContract {
     /// Returns human readable representation of the account for the given account ID.
     pub fn get_account(&self, account_id: AccountId) -> HumanReadableAccount {
         let account = self.internal_get_account(&account_id);
+        let staked_balance: Balance = self.staked_amount_from_num_shares_rounded_down(account.stake_shares);
         HumanReadableAccount {
             account_id,
             unstaked_balance: account.unstaked.into(),
-            staked_balance: self
-                .staked_amount_from_num_shares_rounded_down(account.stake_shares)
-                .into(),
+            staked_balance: staked_balance.into(),
             can_withdraw: account.unstaked_available_epoch_height <= env::epoch_height(),
+            stake_reward: U128(staked_balance - account.stake_principal),
         }
     }
 
