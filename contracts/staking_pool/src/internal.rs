@@ -161,19 +161,23 @@ impl StakingContract {
             "Invariant violation. Calculated staked amount must be positive, because \"stake\" share price should be at least 1"
         );
 
-        // The amount to burn bNEAR.
-        let burn_amount: Balance = (U256::from(account.stake_principal) * U256::from(receive_amount) 
-            / U256::from(self.staked_amount_from_num_shares_rounded_down(account.stake_shares)))
-            .as_u128();
-
         account.stake_shares -= num_shares;
         account.unstaked += receive_amount;
         account.unstaked_available_epoch_height = env::epoch_height() + NUM_EPOCHS_TO_UNLOCK;
         // Reduce stake reward first, then reduce stake principal.
         let stake_reward: Balance = self.internal_get_stake_reward(&account_id);
+        // Unstake over the stake reward.
         if stake_reward < receive_amount {
-            let principal_reduce: Balance = receive_amount - stake_reward;
-            account.stake_principal -= principal_reduce;
+            let principal_reduced: Balance = receive_amount - stake_reward;
+            account.stake_principal -= principal_reduced;
+            // The amount to burn bNEAR is same as the reduced staked principal.
+            ext_fungible_token::burn(
+                account_id.clone(),
+                U128(principal_reduced),
+                &self.token_contract,
+                NO_DEPOSIT,
+                MINT_AND_BURN_GAS,
+            );
         }
         self.internal_save_account(&account_id, &account);
 
@@ -184,15 +188,6 @@ impl StakingContract {
 
         self.total_staked_balance -= unstake_amount;
         self.total_stake_shares -= num_shares;
-
-        
-        ext_fungible_token::burn(
-            account_id.clone(),
-            U128(burn_amount),
-            &self.token_contract,
-            NO_DEPOSIT,
-            MINT_AND_BURN_GAS,
-        );
 
         env::log(
             format!(
