@@ -113,7 +113,11 @@ impl StakingContract {
             &self.token_contract,
             NO_DEPOSIT,
             MINT_AND_BURN_GAS,
-        );
+        ).then(ext_self::on_mint_action(
+            &env::current_account_id(),
+            NO_DEPOSIT,
+            ON_MINT_AND_BURN_ACTION_GAS,
+        ));
 
         env::log(
             format!(
@@ -177,7 +181,11 @@ impl StakingContract {
                 &self.token_contract,
                 NO_DEPOSIT,
                 MINT_AND_BURN_GAS,
-            );
+            ).then(ext_self::on_burn_action(
+                &env::current_account_id(),
+                NO_DEPOSIT,
+                ON_MINT_AND_BURN_ACTION_GAS
+            ));
         }
         self.internal_save_account(&account_id, &account);
 

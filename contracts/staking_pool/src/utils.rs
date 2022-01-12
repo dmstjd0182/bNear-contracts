@@ -26,6 +26,16 @@ pub trait SelfContract {
     /// follow withdraw calls might fail. To mitigate this, the contract will issue a new unstaking
     /// action in case of the failure of the first staking action.
     fn on_stake_action(&mut self);
+
+    /// A callback to check the result of the minting action.
+    /// In case the account register action couldn't completed due to such as storage staking, the minting
+    /// actiong and the stake action will revert.
+    fn on_mint_action(&mut self);
+
+    /// A callback to check the result of the burning action.
+    /// In case the balance of bNEAR is less than unstaking amount, the burning action and
+    /// the unstake action will revert.
+    fn on_burn_action(&mut self);
 }
 
 #[near_bindgen]
@@ -49,6 +59,32 @@ impl StakingContract {
         // has to unstake.
         if !stake_action_succeeded && env::account_locked_balance() > 0 {
             Promise::new(env::current_account_id()).stake(0, self.stake_public_key.clone());
+        }
+    }
+
+    #[private]
+    pub fn on_mint_action(&mut self) {
+        assert_eq!(
+            env::promise_results_count(),
+            1,
+            "Contract expected a result on the callback"
+        );
+
+        if let PromiseResult::Failed = env::promise_result(0) {
+            env::panic(b"Minting action failed.");
+        }
+    }
+
+    #[private]
+    pub fn on_burn_action(&mut self) {
+        assert_eq!(
+            env::promise_results_count(),
+            1,
+            "Contract expected a result on the callback"
+        );
+
+        if let PromiseResult::Failed = env::promise_result(0) {
+            env::panic(b"Burning action failed.");
         }
     }
 }
