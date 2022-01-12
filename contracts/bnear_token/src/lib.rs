@@ -14,7 +14,7 @@ use near_contract_standards::fungible_token::metadata::{
 use near_contract_standards::fungible_token::FungibleToken;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::json_types::{ValidAccountId, U128};
-use near_sdk::{env, near_bindgen, log, Promise, Balance, AccountId, PanicOnDefault, PromiseOrValue};
+use near_sdk::{env, near_bindgen, log, Balance, AccountId, PanicOnDefault, PromiseOrValue};
 
 mod b_near;
 
@@ -64,3 +64,7 @@ impl FungibleTokenMetadataProvider for Contract {
         }
     }
 }
+
+
+#[cfg(all(test, not(target_arch = "wasm32")))]
+mod tests;

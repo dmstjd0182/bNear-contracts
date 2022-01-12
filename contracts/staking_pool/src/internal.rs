@@ -109,7 +109,7 @@ impl StakingContract {
         // Mint bNear to caller.
         ext_fungible_token::mint(
             account_id.clone(),
-            U128(charge_amount),
+            charge_amount,
             &self.token_contract,
             NO_DEPOSIT,
             MINT_AND_BURN_GAS,
@@ -177,7 +177,7 @@ impl StakingContract {
             // The amount to burn bNEAR is same as the reduced staked principal.
             ext_fungible_token::burn(
                 account_id.clone(),
-                U128(principal_reduced),
+                principal_reduced,
                 &self.token_contract,
                 NO_DEPOSIT,
                 MINT_AND_BURN_GAS,

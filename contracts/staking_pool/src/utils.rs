@@ -12,9 +12,9 @@ pub trait VoteContract {
 #[ext_contract(ext_fungible_token)]
 pub trait FungibleToken {
     /// Method for staking pool to mint bNEAR to the delegators when they stakes.
-    fn mint(&mut self, account_id: AccountId, amount: U128);
+    fn mint(&mut self, account_id: AccountId, amount: Balance);
     /// Method for staking pool to burn bNEAR from the delegators when they unstakes.
-    fn burn(&mut self, account_id: AccountId, amount: U128);
+    fn burn(&mut self, account_id: AccountId, amount: Balance);
 }
 
 /// Interface for the contract itself.
