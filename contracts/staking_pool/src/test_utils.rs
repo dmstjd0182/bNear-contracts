@@ -15,6 +15,10 @@ pub fn owner() -> AccountId {
     "owner".to_string()
 }
 
+pub fn token() -> AccountId {
+    "token".to_string()
+}
+
 pub fn ntoy(near_amount: Balance) -> Balance {
     near_amount * 10u128.pow(24)
 }
@@ -122,6 +126,7 @@ pub fn testing_env_with_promise_results(context: VMContext, promise_result: Prom
         Default::default(),
         vec![promise_result],
         storage,
+        Default::default(),
         Default::default(),
     )));
 }
