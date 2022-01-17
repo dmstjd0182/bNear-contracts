@@ -28,7 +28,7 @@ const VOTE_GAS: Gas = 100_000_000_000_000;
 const ON_STAKE_ACTION_GAS: Gas = 20_000_000_000_000;
 
 /// The amount of gas given to complete internal `on_burn_action` call.
-const ON_MINT_AND_BURN_ACTION_GAS: Gas = 20_000_000_000_000;
+const ON_MINT_AND_BURN_ACTION_GAS: Gas = 100_000_000_000_000;
 
 /// The amount of gas given to complete 'mint' and 'burn' call.
 const MINT_AND_BURN_GAS: Gas = 20_000_000_000_000;

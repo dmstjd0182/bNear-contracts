@@ -71,7 +71,7 @@ impl StakingContract {
         assert!(amount > 0, "Staking amount should be positive");
 
         let account_id = env::predecessor_account_id();
-        let mut account = self.internal_get_account(&account_id);
+        let account = self.internal_get_account(&account_id);
 
         // Calculate the number of "stake" shares that the account will receive for staking the
         // given amount.
@@ -93,20 +93,9 @@ impl StakingContract {
             account.unstaked >= charge_amount,
             "Not enough unstaked balance to stake"
         );
-        account.unstaked -= charge_amount;
-        account.stake_shares += num_shares;
-        account.stake_principal += charge_amount;
-        self.internal_save_account(&account_id, &account);
-
-        // The staked amount that will be added to the total to guarantee the "stake" share price
-        // never decreases. The difference between `stake_amount` and `charge_amount` is paid
-        // from the allocated STAKE_SHARE_PRICE_GUARANTEE_FUND.
-        let stake_amount = self.staked_amount_from_num_shares_rounded_up(num_shares);
-
-        self.total_staked_balance += stake_amount;
-        self.total_stake_shares += num_shares;
 
         // Mint bNear to caller.
+        // Stake occurs only when minting action is successful.
         ext_fungible_token::mint(
             account_id.clone(),
             charge_amount,
@@ -114,25 +103,13 @@ impl StakingContract {
             NO_DEPOSIT,
             MINT_AND_BURN_GAS,
         ).then(ext_self::on_mint_action(
+            account_id,
+            charge_amount,
+            num_shares,
             &env::current_account_id(),
             NO_DEPOSIT,
             ON_MINT_AND_BURN_ACTION_GAS,
         ));
-
-        env::log(
-            format!(
-                "@{} staking {}. Received {} new staking shares. Total {} unstaked balance and {} staking shares",
-                account_id, charge_amount, num_shares, account.unstaked, account.stake_shares
-            )
-                .as_bytes(),
-        );
-        env::log(
-            format!(
-                "Contract total staked balance is {}. Total number of shares {}",
-                self.total_staked_balance, self.total_stake_shares
-            )
-            .as_bytes(),
-        );
     }
 
     pub(crate) fn inner_unstake(&mut self, amount: Balance) {
@@ -165,16 +142,42 @@ impl StakingContract {
             "Invariant violation. Calculated staked amount must be positive, because \"stake\" share price should be at least 1"
         );
 
-        account.stake_shares -= num_shares;
-        account.unstaked += receive_amount;
-        account.unstaked_available_epoch_height = env::epoch_height() + NUM_EPOCHS_TO_UNLOCK;
         // Reduce stake reward first, then reduce stake principal.
         let stake_reward: Balance = self.internal_get_stake_reward(&account_id);
-        // Unstake over the stake reward.
-        if stake_reward < receive_amount {
+
+        if stake_reward >= receive_amount {
+            account.stake_shares -= num_shares;
+            account.unstaked += receive_amount;
+            account.unstaked_available_epoch_height = env::epoch_height() + NUM_EPOCHS_TO_UNLOCK;
+
+            self.internal_save_account(&account_id, &account);
+
+            // The amount tokens that will be unstaked from the total to guarantee the "stake" share
+            // price never decreases. The difference between `receive_amount` and `unstake_amount` is
+            // paid from the allocated STAKE_SHARE_PRICE_GUARANTEE_FUND.
+            let unstake_amount = self.staked_amount_from_num_shares_rounded_down(num_shares);
+
+            self.total_staked_balance -= unstake_amount;
+            self.total_stake_shares -= num_shares;
+
+            env::log(
+                format!(
+                    "@{} unstaking {}. Spent {} staking shares. Total {} unstaked balance and {} staking shares",
+                    account_id, receive_amount, num_shares, account.unstaked, account.stake_shares
+                )
+                .as_bytes(),
+            );
+            env::log(
+                format!(
+                    "Contract total staked balance is {}. Total number of shares {}",
+                    self.total_staked_balance, self.total_stake_shares
+                )
+                .as_bytes(),
+            );
+        } else {
             let principal_reduced: Balance = receive_amount - stake_reward;
-            account.stake_principal -= principal_reduced;
             // The amount to burn bNEAR is same as the reduced staked principal.
+            // Unstake occurs only when burning action is successful.
             ext_fungible_token::burn(
                 account_id.clone(),
                 principal_reduced,
@@ -182,35 +185,15 @@ impl StakingContract {
                 NO_DEPOSIT,
                 MINT_AND_BURN_GAS,
             ).then(ext_self::on_burn_action(
+                account_id,
+                num_shares,
+                receive_amount,
+                principal_reduced,
                 &env::current_account_id(),
                 NO_DEPOSIT,
                 ON_MINT_AND_BURN_ACTION_GAS
             ));
         }
-        self.internal_save_account(&account_id, &account);
-
-        // The amount tokens that will be unstaked from the total to guarantee the "stake" share
-        // price never decreases. The difference between `receive_amount` and `unstake_amount` is
-        // paid from the allocated STAKE_SHARE_PRICE_GUARANTEE_FUND.
-        let unstake_amount = self.staked_amount_from_num_shares_rounded_down(num_shares);
-
-        self.total_staked_balance -= unstake_amount;
-        self.total_stake_shares -= num_shares;
-
-        env::log(
-            format!(
-                "@{} unstaking {}. Spent {} staking shares. Total {} unstaked balance and {} staking shares",
-                account_id, receive_amount, num_shares, account.unstaked, account.stake_shares
-            )
-                .as_bytes(),
-        );
-        env::log(
-            format!(
-                "Contract total staked balance is {}. Total number of shares {}",
-                self.total_staked_balance, self.total_stake_shares
-            )
-            .as_bytes(),
-        );
     }
 
     /// Asserts that the method was called by the owner.
