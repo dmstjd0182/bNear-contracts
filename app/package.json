@@ -4,17 +4,16 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "npm run build:contract && npm run build:web",
-    "build:contract": "node contract/compile.js",
-    "build:contract:debug": "node contract/compile.js --debug",
+    "build:contract": "cd ../contracts/staking_pool && ./build.sh",
     "build:web": "parcel build src/index.html --public-url ./",
-    "dev:deploy:contract": "near dev-deploy",
-    "deploy:contract": "near deploy",
+    "dev:deploy:contract": "near dev-deploy ../contracts/staking_pool/res/staking_pool.wasm",
+    "deploy:contract": "../contracts/staking_pool/deploy.sh",
     "deploy:pages": "gh-pages -d dist/",
     "deploy": "npm run build && npm run deploy:contract && npm run deploy:pages",
-    "prestart": "npm run build:contract:debug && npm run dev:deploy:contract",
-    "start": "echo The app is starting! It will automatically open in your browser when ready && env-cmd -f ./neardev/dev-account.env parcel src/index.html --open",
-    "dev": "nodemon --watch contract/src -e rs --exec \"npm run start\"",
-    "test": "npm run build:contract:debug && cd contract && cargo test -- --nocapture && cd .. && jest test --runInBand"
+    "prestart": "npm run build:contract && npm run dev:deploy:contract",
+    "start": "echo The app is starting! It will automatically open in your browser when ready && env-cmd -f ../contracts/staking_pool/neardev/dev-account.env parcel src/index.html --open",
+    "dev": "nodemon --watch ../contracts/staking_pool/src -e rs --exec \"npm run start\"",
+    "test": "npm run build:contract && cd ../contracts/staking_pool && cargo test -- --nocapture"
   },
   "devDependencies": {
     "@babel/core": "~7.14.0",
