@@ -6,7 +6,7 @@ use near_sdk::json_types::{Base58PublicKey, U128, ValidAccountId};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{
     env, near_bindgen, AccountId, Balance, EpochHeight, Promise, PublicKey,
-    ext_contract, PromiseResult, Gas
+    ext_contract, PromiseResult, Gas, assert_one_yocto,
 };
 use uint::construct_uint;
 
@@ -176,7 +176,6 @@ impl StakingContract {
         reward_fee_fraction: RewardFeeFraction,
         token_contract: ValidAccountId,
     ) -> Self {
-        assert!(!env::state_exists(), "Already initialized");
         reward_fee_fraction.assert_valid();
         assert!(
             env::is_valid_account_id(owner_id.as_bytes()),
@@ -207,6 +206,7 @@ impl StakingContract {
     }
 
     /// Distributes rewards and restakes if needed.
+    #[payable]
     pub fn ping(&mut self) {
         if self.internal_ping() {
             self.internal_restake();
@@ -238,7 +238,9 @@ impl StakingContract {
 
     /// Withdraws the entire unstaked balance from the predecessor account.
     /// It's only allowed if the `unstake` action was not performed in the four most recent epochs.
+    #[payable]
     pub fn withdraw_all(&mut self) {
+        assert_one_yocto();
         let need_to_restake = self.internal_ping();
 
         let account_id = env::predecessor_account_id();
@@ -252,7 +254,9 @@ impl StakingContract {
 
     /// Withdraws the non staked balance for given account.
     /// It's only allowed if the `unstake` action was not performed in the four most recent epochs.
+    #[payable]
     pub fn withdraw(&mut self, amount: U128) {
+        assert_one_yocto();
         let need_to_restake = self.internal_ping();
 
         let amount: Balance = amount.into();
@@ -264,7 +268,9 @@ impl StakingContract {
     }
 
     /// Stakes all available unstaked balance from the inner account of the predecessor.
+    #[payable]
     pub fn stake_all(&mut self) {
+        assert_one_yocto();
         // Stake action always restakes
         self.internal_ping();
 
@@ -277,7 +283,9 @@ impl StakingContract {
 
     /// Stakes the given amount from the inner account of the predecessor.
     /// The inner account should have enough unstaked balance.
+    #[payable]
     pub fn stake(&mut self, amount: U128) {
+        assert_one_yocto();
         // Stake action always restakes
         self.internal_ping();
 
@@ -289,7 +297,9 @@ impl StakingContract {
 
     /// Unstakes all staked balance from the inner account of the predecessor.
     /// The new total unstaked balance will be available for withdrawal in four epochs.
+    #[payable]
     pub fn unstake_all(&mut self) {
+        assert_one_yocto();
         // Unstake action always restakes
         self.internal_ping();
 
@@ -304,7 +314,9 @@ impl StakingContract {
     /// Unstakes the given amount from the inner account of the predecessor.
     /// The inner account should have enough staked balance.
     /// The new total unstaked balance will be available for withdrawal in four epochs.
+    #[payable]
     pub fn unstake(&mut self, amount: U128) {
+        assert_one_yocto();
         // Unstake action always restakes
         self.internal_ping();
 
@@ -316,7 +328,9 @@ impl StakingContract {
 
     /// Unstakes all stake reward from the inner account of the predecessor.
     /// The new total unstaked balance will be available for withdrawal in four epochs.
+    #[payable]
     pub fn unstake_reward(&mut self) {
+        assert_one_yocto();
         // Unstake action always restakes
         self.internal_ping();
 
