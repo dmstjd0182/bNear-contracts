@@ -3,4 +3,4 @@
 near dev-deploy \
     --wasmFile res/bnear_token.wasm \
     --initFunction new \
-    --initArgs '{"staking_pool": "dev-1642667924375-10674190632790"}'
+    --initArgs '{"staking_pool": "dev-1642678330804-87084875037482"}'
