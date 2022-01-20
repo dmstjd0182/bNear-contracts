@@ -9,10 +9,13 @@ const { networkId } = getConfig(process.env.NODE_ENV || 'development')
 
 export default function App() {
   // use React Hooks to store greeting in component state
-  const [greeting, set_greeting] = React.useState()
+  const [bnear, setBnear] = React.useState('');
 
-  // when the user has not yet interacted with the form, disable the button
-  const [buttonDisabled, setButtonDisabled] = React.useState(true)
+  const [staked, setStaked] = React.useState('');
+
+  const [unstaked, setUnstaked] = React.useState('');
+
+  const [reward, setReward] = React.useState('');
 
   // after submitting the form, we want to show Notification
   const [showNotification, setShowNotification] = React.useState(false)
@@ -29,6 +32,7 @@ export default function App() {
     await window.contract.unstake(
       {amount},
       300000000000000,
+      '1'
     );
   };
 
@@ -36,21 +40,22 @@ export default function App() {
     await window.contract.withdraw(
       {amount},
       300000000000000,
+      '1'
     );
   };
 
   // The useEffect hook can be used to fire side-effects during render
   // Learn more: https://reactjs.org/docs/hooks-intro.html
   React.useEffect(
-    () => {
+    async () => {
       // in this case, we only care to query the contract when signed in
       if (window.walletConnection.isSignedIn()) {
 
         // window.contract is set by initContract in index.js
-        window.contract.get_greeting({ account_id: window.accountId })
-          .then(greetingFromContract => {
-            set_greeting(greetingFromContract)
-          })
+        setBnear(await window.token.ft_balance_of({ account_id: window.accountId }));
+        setReward(await window.contract.get_account_stake_reward({ account_id: window.accountId }));
+        setStaked(await window.contract.get_account_staked_balance({ account_id: window.accountId }));
+        setUnstaked(await window.contract.get_account_unstaked_balance({ account_id: window.accountId }));
       }
     },
 
@@ -96,6 +101,14 @@ export default function App() {
           {' '/* React trims whitespace around tags; insert literal space character when needed */}
           {window.accountId}
         </h1>
+        <h4>
+          <ul>
+            <li>bNEAR Balance : {bnear}</li>
+            <li>Claimable Reward: {reward}</li>
+            <li>Staked Balance: {staked}</li>
+            <li>Unstaked Balance: {unstaked}</li>
+          </ul>
+        </h4>
         <FormComponent
             method = {stake}
             setShowNotification = {setShowNotification}
