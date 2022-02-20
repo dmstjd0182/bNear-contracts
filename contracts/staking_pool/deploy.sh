@@ -1,6 +1,6 @@
 #!/bin/bash
 near deploy \
-    --accountId staking.blockwave.testnet \
+    --accountId staking.bnear.synchro.testnet \
     --wasmFile res/staking_pool.wasm \
     --initFunction new \
-    --initArgs '{"owner_id": "blockwave.testnet", "stake_public_key": "EycV9zs7ZUk1jVvzUyx13Rv6oEqyZqyTb9AQB74NdQPd", "reward_fee_fraction": {"numerator": 10, "denominator": 100}, "token_contract": "bnear.blockwave.testnet"}'
+    --initArgs '{"owner_id": "synchro.testnet", "stake_public_key": "ARZ4wNgwZ85rCAnRKESJGNLdM54acSyjQUucKewN9tCM", "reward_fee_fraction": {"numerator": 10, "denominator": 100}, "token_contract": "bnear.synchro.testnet"}'
