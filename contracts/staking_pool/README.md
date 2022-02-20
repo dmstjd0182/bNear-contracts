@@ -63,7 +63,8 @@ attached amount of unstaked tokens.
 
 When an account wants to stake a given amount, the contract calculates the number of "stake" shares (`num_shares`) and the actual rounded stake amount (`amount`).
 The unstaked balance of the account is decreased by `amount`, the number of "stake" shares of the account is increased by `num_shares`.
-The contract increases the total number of staked tokens and the total number of "stake" shares. Then the contract restakes.
+The contract increases the total number of staked tokens and the total number of "stake" shares. Also it mints bNEAR by `amount` to the caller.
+Then the contract restakes.
 
 #### Unstake
 
@@ -71,7 +72,8 @@ When an account wants to unstake a given amount, the contract calculates the num
 the actual required rounded unstake amount (`amount`). It's calculated based on the current total price of "stake" shares.
 The unstaked balance of the account is increased by `amount`, the number of "stake" shares of the account is decreased by `num_shares`.
 The minimum epoch height when the account can withdraw is set to the current epoch height increased by `4`.
-The contract decreases the total number of staked tokens and the total number of "stake" shares. Then the contract restakes.
+The contract decreases the total number of staked tokens and the total number of "stake" shares. Also it burns caller's bNEAR by `amount`. If caller doesn't have enough bNEAR, the transaction will panic.
+Then the contract restakes.
 
 #### Withdraw
 
