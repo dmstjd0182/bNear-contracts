@@ -1,13 +1,3 @@
-/*!
-* wNear NEP-141 Token contract
-*
-* The aim of the contract is to enable the wrapping of the native NEAR token into a NEP-141 compatible token.
-* It supports methods `near_deposit` and `near_withdraw` that wraps and unwraps NEAR tokens.
-* They are effectively mint and burn underlying wNEAR tokens.
-*
-* lib.rs is the main entry point.
-* w_near.rs contains interfaces for depositing and withdrawing
-*/
 use near_contract_standards::fungible_token::metadata::{
     FungibleTokenMetadata, FungibleTokenMetadataProvider, FT_METADATA_SPEC,
 };
